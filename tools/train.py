@@ -50,11 +50,24 @@ def main():
         cfg.merge_from_dict(args.cfg_options)
 
     # DDP init
-    args.local_rank = int(os.environ["LOCAL_RANK"])
-    args.world_size = int(os.environ["WORLD_SIZE"])
-    args.rank = int(os.environ["RANK"])
-    print(f"Distributed init (rank {args.rank}/{args.world_size}, local rank {args.local_rank})")
-    dist.init_process_group("nccl", rank=args.rank, world_size=args.world_size)
+    local_rank_env = os.environ.get("LOCAL_RANK")
+    world_size_env = os.environ.get("WORLD_SIZE")
+    rank_env = os.environ.get("RANK")
+    if (local_rank_env is not None) and (world_size_env is not None) and (rank_env is not None):
+        args.local_rank = int(local_rank_env)
+        args.world_size = int(world_size_env)
+        args.rank = int(rank_env)
+        print(
+            f"Distributed init (rank {args.rank}/{args.world_size}, local rank {args.local_rank})"
+        )
+        dist.init_process_group("nccl", rank=args.rank, world_size=args.world_size)
+        ddp = True
+    else:
+        args.local_rank = 0
+        args.world_size = 1
+        args.rank = 0
+        ddp = False
+        print("DDP disabled. Running in a single process.")
     torch.cuda.set_device(args.local_rank)
 
     # set random seed, create work_dir, and save config
@@ -106,14 +119,17 @@ def main():
     # DDP
     use_static_graph = getattr(cfg.solver, "static_graph", False)
     model = model.to(args.local_rank)
-    model = DistributedDataParallel(
-        model,
-        device_ids=[args.local_rank],
-        output_device=args.local_rank,
-        find_unused_parameters=False if use_static_graph else True,
-        static_graph=use_static_graph,  # default is False, should be true when use activation checkpointing in E2E
-    )
-    logger.info(f"Using DDP with total {args.world_size} GPUS...")
+    if ddp:
+        model = DistributedDataParallel(
+            model,
+            device_ids=[args.local_rank],
+            output_device=args.local_rank,
+            find_unused_parameters=False if use_static_graph else True,
+            static_graph=use_static_graph,  # default is False, should be true when use activation checkpointing in E2E
+        )
+        logger.info(f"Using DDP with total {args.world_size} GPUS...")
+    else:
+        logger.info("DDP disabled. Using single GPU.")
 
     # FP16 compression
     use_fp16_compress = getattr(cfg.solver, "fp16_compress", False)
