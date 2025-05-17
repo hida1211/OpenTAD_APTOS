@@ -90,6 +90,7 @@ The detailed configs, results, and pretrained models of each method can be found
 ## 🛠️ Installation
 
 Please refer to [install.md](docs/en/install.md) for installation.
+If you are using Google Colab, follow [colab_setup.md](docs/en/colab_setup.md) for environment setup.
 
 ## 📝 Data Preparation
 
