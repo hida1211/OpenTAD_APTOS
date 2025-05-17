@@ -7,7 +7,7 @@ import torch.distributed as dist
 
 
 def set_seed(seed, disable_deterministic=False):
-    """Set randon seed for pytorch and numpy"""
+    """Set random seed for pytorch and numpy"""
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
