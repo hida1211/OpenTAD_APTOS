@@ -198,7 +198,7 @@ class mAP:
 
         ap = np.zeros((len(self.tiou_thresholds), len(self.activity_index.items())))
         for i, cidx in enumerate(self.activity_index.values()):
-            ap[:, cidx] = self.mAP_result_dict[i]
+            ap[:, cidx] = self.mAP_result_dict[cidx]
         return ap
 
     def multi_thread_compute_topkx_recall(self):
@@ -224,7 +224,7 @@ class mAP:
 
         recall = np.zeros((len(self.tiou_thresholds), len(self.top_k), len(self.activity_index.items())))
         for i, cidx in enumerate(self.activity_index.values()):
-            recall[..., cidx] = self.recall_result_dict[i]
+            recall[..., cidx] = self.recall_result_dict[cidx]
         return recall
 
     def evaluate(self):
